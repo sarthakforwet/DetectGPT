@@ -635,7 +635,7 @@ def generate_data(dataset, key):
     data = list(dict.fromkeys(data))  # deterministic, as opposed to set()
 
     # strip whitespace around each example
-    data = [x.strip() for x in data]
+    data = [x.strip() if type(x) == str else x for x in data ]
 
     # remove newlines from each example
     data = [strip_newlines(x) for x in data]

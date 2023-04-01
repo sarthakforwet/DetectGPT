@@ -1,43 +1,54 @@
 import random
 import datasets
-from bs4 import BeautifulSoup
-import os
-
+import pandas as pd
+import re
 
 SEPARATOR = '<<<SEP>>>'
 
 
-DATASETS = ['medquad']
+DATASETS = ['writing', 'english', 'german', 'pubmed', 'books']
 
-def load_medquad(cache_dir):
-    path = "S:/NLP/Project/MedQuadDataset"
-    questions = []
-    answers = []
-    print("Loading MedQuad Data....")
-    for dir in os.listdir(path):
-        print(f"working with {dir}")
-        print(dir)
-        for file in os.listdir(os.path.join(path, dir)):
-            with open(os.path.join(path, dir, file), "r", encoding="utf-8") as f:
-                data = f.read()
+def load_books(cache_dir):
+    data = pd.read_csv("./google_books_1299.csv")
+    #print("data.head()", data.head())
+    data = data.dropna()
+    text = data["description"]
 
-            page = BeautifulSoup(data, "xml")
-            qa_pairs = page.find_all("QAPair")
-            for e in qa_pairs:
-                ques = e.find("Question")
-                ans = e.find("Answer")
-                if len(ans.text)==0:
-                    continue
+    #print("text.head()",text.head())
 
-                questions.append(ques.text)
-                answers.append(ans.text)
+    out = []
+    try:
+        for desc in text:
+            for e in desc.split(" "):
+                if type(e)==float:
+                    e = str(e)
+
+                out.append(e)
+    except Exception as e:
+        print(desc)
+        
+    return text.values
+
+    # for i in range(len(text)):
+    #     try:
+    #         text[i] = re.sub(r'\d+', '', text[i])
+    #     except TypeError:
+    #         text[i] = "REMOVE"
+
+    # text = text[text != "REMOVE"]
+
+def load_pubmed(cache_dir):
+    data = datasets.load_dataset('pubmed_qa', 'pqa_labeled', split='train', cache_dir=cache_dir)
     
-    data = [f"Question: {q} Answer:{SEPARATOR}{a}" for q, a in zip(questions, answers)]
+    # combine question and long_answer
+    data = [f'Question: {q} Answer:{SEPARATOR}{a}' for q, a in zip(data['question'], data['long_answer'])]
 
     return data
 
+
 def process_prompt(prompt):
     return prompt.replace('[ WP ]', '').replace('[ OT ]', '')
+
 
 def process_spaces(story):
     return story.replace(
@@ -61,6 +72,44 @@ def process_spaces(story):
         ' i\'', ' I\'').replace(
         '\\\'', '\'').replace(
         '\n ', '\n').strip()
+
+
+def load_writing(cache_dir=None):
+    writing_path = 'data/writingPrompts'
+    
+    with open(f'{writing_path}/valid.wp_source', 'r') as f:
+        prompts = f.readlines()
+    with open(f'{writing_path}/valid.wp_target', 'r') as f:
+        stories = f.readlines()
+    
+    prompts = [process_prompt(prompt) for prompt in prompts]
+    joined = [process_spaces(prompt + " " + story) for prompt, story in zip(prompts, stories)]
+    filtered = [story for story in joined if 'nsfw' not in story and 'NSFW' not in story]
+
+    random.seed(0)
+    random.shuffle(filtered)
+
+    return filtered
+
+
+def load_language(language, cache_dir):
+    # load either the english or german portion of the wmt16 dataset
+    assert language in ['en', 'de']
+    d = datasets.load_dataset('wmt16', 'de-en', split='train', cache_dir=cache_dir)
+    docs = d['translation']
+    desired_language_docs = [d[language] for d in docs]
+    lens = [len(d.split()) for d in desired_language_docs]
+    sub = [d for d, l in zip(desired_language_docs, lens) if l > 100 and l < 150]
+    return sub
+
+
+def load_german(cache_dir):
+    return load_language('de', cache_dir)
+
+
+def load_english(cache_dir):
+    return load_language('en', cache_dir)
+
 
 def load(name, cache_dir, **kwargs):
     if name in DATASETS:
