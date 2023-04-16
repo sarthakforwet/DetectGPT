@@ -465,6 +465,10 @@ def get_perturbation_results(span_length=10, n_perturbations=1, n_samples=500):
     return results
 
 
+"""
+This function returns the results of the experiments such as roc_auc, precision, recall
+Original perturbations are tagged with "d", standardized perturbations are tagged with "z".
+"""
 def run_perturbation_experiment(results, criterion, span_length=10, n_perturbations=1, n_samples=500):
     # compute diffs with perturbed
     predictions = {'real': [], 'samples': []}
@@ -514,6 +518,9 @@ def run_perturbation_experiment(results, criterion, span_length=10, n_perturbati
     }
 
 
+"""
+The baseline experiments are calculated here to benchmark against the perturbed ones.
+"""
 def run_baseline_threshold_experiment(criterion_fn, name, n_samples=500):
     torch.manual_seed(0)
     np.random.seed(0)
@@ -586,6 +593,9 @@ def truncate_to_substring(text, substring, idx_occurrence):
     return text[:idx]
 
 
+"""
+Generate samples, and split into batches 
+"""
 def generate_samples(raw_data, batch_size):
     torch.manual_seed(42)
     np.random.seed(42)
@@ -609,7 +619,7 @@ def generate_samples(raw_data, batch_size):
             # add to the data
             data["original"].append(o)
             data["sampled"].append(s)
-    
+
     if args.pre_perturb_pct > 0:
         print(f'APPLYING {args.pre_perturb_pct}, {args.pre_perturb_span_length} PRE-PERTURBATIONS')
         load_mask_model()
@@ -619,6 +629,9 @@ def generate_samples(raw_data, batch_size):
     return data
 
 
+"""
+Use the custom datasets to load the data. useful for generating samples from the data
+"""
 def generate_data(dataset, key):
     # load data
     if dataset in custom_datasets.DATASETS:
@@ -687,6 +700,9 @@ def load_base_model_and_tokenizer(name):
     return base_model, base_tokenizer
 
 
+"""
+Use and report metrics for the supervised model
+"""
 def eval_supervised(data, model):
     print(f'Beginning supervised evaluation with {model}...')
     detector = transformers.AutoModelForSequenceClassification.from_pretrained(model, cache_dir=cache_dir).to(DEVICE)
@@ -701,7 +717,7 @@ def eval_supervised(data, model):
             batch_real = real[batch * batch_size:(batch + 1) * batch_size]
             batch_real = tokenizer(batch_real, padding=True, truncation=True, max_length=512, return_tensors="pt").to(DEVICE)
             real_preds.extend(detector(**batch_real).logits.softmax(-1)[:,0].tolist())
-        
+
         # get predictions for fake
         fake_preds = []
         for batch in tqdm.tqdm(range(len(fake) // batch_size), desc="Evaluating fake"):
@@ -742,13 +758,18 @@ def eval_supervised(data, model):
     }
 
 
+"""
+Parse cmd line arguments with default fallbacks
+
+pct_words_masked is actually pct_words_masked * (span_length / (span_length + 2 * buffer_size))
+"""
 if __name__ == '__main__':
     DEVICE = "cuda"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default="xsum")
     parser.add_argument('--dataset_key', type=str, default="document")
-    parser.add_argument('--pct_words_masked', type=float, default=0.3) # pct masked is actually pct_words_masked * (span_length / (span_length + 2 * buffer_size))
+    parser.add_argument('--pct_words_masked', type=float, default=0.3)
     parser.add_argument('--span_length', type=int, default=2)
     parser.add_argument('--n_samples', type=int, default=200)
     parser.add_argument('--n_perturbation_list', type=str, default="1,10")
@@ -915,11 +936,11 @@ if __name__ == '__main__':
             # write entropy threshold results to a file
             with open(os.path.join(SAVE_FOLDER, f"entropy_threshold_results.json"), "w") as f:
                 json.dump(baseline_outputs[3], f)
-        
+
         # write supervised results to a file
         with open(os.path.join(SAVE_FOLDER, f"roberta-base-openai-detector_results.json"), "w") as f:
             json.dump(baseline_outputs[-2], f)
-        
+
         # write supervised results to a file
         with open(os.path.join(SAVE_FOLDER, f"roberta-large-openai-detector_results.json"), "w") as f:
             json.dump(baseline_outputs[-1], f)
