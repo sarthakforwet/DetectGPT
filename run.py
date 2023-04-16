@@ -467,7 +467,13 @@ def get_perturbation_results(span_length=10, n_perturbations=1, n_samples=500):
 
 """
 This function returns the results of the experiments such as roc_auc, precision, recall
-Original perturbations are tagged with "d", standardized perturbations are tagged with "z".
+
+results: raw results from get_perturbation_results()
+criterion: Original perturbations are tagged with "d", standardized perturbations are tagged with "z"
+span_length: used in calculating perturbations
+n_perturbations: number of perturbations
+n_samples: number of datapoints sampled from data
+
 """
 def run_perturbation_experiment(results, criterion, span_length=10, n_perturbations=1, n_samples=500):
     # compute diffs with perturbed
@@ -520,6 +526,10 @@ def run_perturbation_experiment(results, criterion, span_length=10, n_perturbati
 
 """
 The baseline experiments are calculated here to benchmark against the perturbed ones.
+
+criterion_fn: entropy, rank, etc..
+name: name of criterion
+n_samples: number of datapoints sampled from data
 """
 def run_baseline_threshold_experiment(criterion_fn, name, n_samples=500):
     torch.manual_seed(0)
@@ -594,7 +604,10 @@ def truncate_to_substring(text, substring, idx_occurrence):
 
 
 """
-Generate samples, and split into batches 
+Generate samples, and split into batches:
+
+raw_data: data in dataset
+batch_size: n_samples from command line
 """
 def generate_samples(raw_data, batch_size):
     torch.manual_seed(42)
@@ -631,6 +644,9 @@ def generate_samples(raw_data, batch_size):
 
 """
 Use the custom datasets to load the data. useful for generating samples from the data
+
+dataset: dataset to generate data from
+key: from arg dataset_key
 """
 def generate_data(dataset, key):
     # load data
@@ -702,6 +718,9 @@ def load_base_model_and_tokenizer(name):
 
 """
 Use and report metrics for the supervised model
+
+data: data containing original and samples
+model: supervised model, eg. roberta-base-openai-detector
 """
 def eval_supervised(data, model):
     print(f'Beginning supervised evaluation with {model}...')
@@ -761,7 +780,7 @@ def eval_supervised(data, model):
 """
 Parse cmd line arguments with default fallbacks
 
-pct_words_masked is actually pct_words_masked * (span_length / (span_length + 2 * buffer_size))
+pct_words_masked: is actually pct_words_masked * (span_length / (span_length + 2 * buffer_size))
 """
 if __name__ == '__main__':
     DEVICE = "cuda"
