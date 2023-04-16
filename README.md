@@ -18,6 +18,8 @@ First, install the Python dependencies:
 
 Second, execute `run.py` using `python run.py` and provide the appropriate command line arguments to the script.
 
+If you have new dataset to include, add its inclusion in `custom_datasets.py` script and then execute `run.py` as instructed above.
+
 Please refer to the script for more details on how each function is working and what CLI to give.
 
 Here, we extend the original DetectGPT paper. We apply the method on new datasets and compare the results to the ones achieved by the original authors, verifying the algorithm works well on new datasets (especially ones that have a different style of text). Further, we document the original source code and provide a document outlining how we ran our code (and tuned associated hyperparameters).
