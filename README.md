@@ -1,6 +1,6 @@
 # DetectGPT: Distinguishing between Machine-Generated and Human-Written Text
 
-This repository is an exrtension of the original work done on the detectGPT model by incorporating three datasets on new writing styles and verifying detectGPT's performance on them.  
+This repository is an extension of the original work done on the detectGPT model by incorporating three datasets on new writing styles and verifying detectGPT's performance on them.  
 
 ## Original implementation of the experiments in the [DetectGPT paper](https://arxiv.org/abs/2301.11305v1).
 
